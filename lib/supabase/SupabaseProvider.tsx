@@ -18,23 +18,35 @@ export default function SupabaseProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const { session } = useSession();
+  const { session, isLoaded: sessionLoaded } = useSession();
   const [supabase, setSupabase] = useState<SupabaseClient | null>(null);
   const [isLoaded, setIsLoaded] = useState<boolean>(false);
 
   useEffect(() => {
-    if (!session) return;
+    if (!sessionLoaded) return;
+
     const client = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
       {
-        accessToken: () => session?.getToken(),
+        global: {
+          fetch: (...args) => fetch(...args),
+        },
+        accessToken: async () => {
+          try {
+            const token = await session?.getToken({ template: "supabase" });
+            return token || "";
+          } catch (e) {
+            console.error("Error getting supabase token", e);
+            return "";
+          }
+        },
       }
     );
 
     setSupabase(client);
     setIsLoaded(true);
-  }, [session]);
+  }, [session, sessionLoaded]);
 
   return (
     <Context.Provider value={{ supabase, isLoaded }}>

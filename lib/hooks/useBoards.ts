@@ -12,20 +12,20 @@ import { Board, Column, ColumnWithTasks, Task } from "../supabase/models";
 import { useSupabase } from "../supabase/SupabaseProvider";
 
 export function useBoards() {
-  const { user } = useUser();
-  const { supabase } = useSupabase();
+  const { user, isLoaded: userLoaded } = useUser();
+  const { supabase, isLoaded: supabaseLoaded } = useSupabase();
   const [boards, setBoards] = useState<Board[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (user) {
+    if (user && supabase) {
       loadBoards();
     }
   }, [user, supabase]);
 
   async function loadBoards() {
-    if (!user) return;
+    if (!user || !supabase) return;
 
     try {
       setLoading(true);
@@ -60,7 +60,13 @@ export function useBoards() {
     }
   }
 
-  return { boards, loading, error, createBoard };
+  return {
+    boards,
+    loading,
+    error,
+    createBoard,
+    isLoaded: userLoaded && supabaseLoaded,
+  };
 }
 
 export function useBoard(boardId: string) {
@@ -73,13 +79,13 @@ export function useBoard(boardId: string) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (boardId) {
+    if (boardId && supabase) {
       loadBoard();
     }
   }, [boardId, supabase]);
 
   async function loadBoard() {
-    if (!boardId) return;
+    if (!boardId || !supabase) return;
 
     try {
       setLoading(true);

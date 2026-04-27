@@ -37,8 +37,8 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function DashboardPage() {
-  const { user } = useUser();
-  const { createBoard, boards, loading, error } = useBoards();
+  const { user, isLoaded: userLoaded } = useUser();
+  const { createBoard, boards, loading, error, isLoaded: supabaseLoaded } = useBoards();
   const router = useRouter();
   const { isFreeUser } = usePlan();
   const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
@@ -93,6 +93,7 @@ export default function DashboardPage() {
   }
 
   const handleCreateBoard = async () => {
+    if (!user) return;
     if (!canCreateBoard) {
       setShowUpgradeDialog(true);
       return;
@@ -100,13 +101,13 @@ export default function DashboardPage() {
     await createBoard({ title: "New Board" });
   };
 
-  // if (loading) {
-  //   return (
-  //     <div>
-  //       <Loader2 /> <span>Loading your boards...</span>
-  //     </div>
-  //   );
-  // }
+  if (!userLoaded || !supabaseLoaded) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   if (error) {
     return (
